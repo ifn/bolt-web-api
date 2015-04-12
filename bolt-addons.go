@@ -22,27 +22,40 @@ func NewBoltSrv(port string) *BoltServer {
 	return bs
 }
 
-type Error struct {
-	Err string `json:"error"`
+//
+
+type Response struct {
+	Code  int    `json:"code"`
+	Error string `json:"error"`
 }
 
-func CreateBucketHandler(bs *BoltServer) http.HandlerFunc {
+type HandlerFunc func(w http.ResponseWriter, r *http.Request) error
+
+func jsonHandler(hf HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		encoder := json.NewEncoder(w)
 
+		err := hf(w, r)
+
+		if err != nil {
+			encoder.Encode(Response{1, err.Error()})
+			return
+		}
+		encoder.Encode(Response{})
+	}
+}
+
+//
+
+func CreateBucketHandler(bs *BoltServer) HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) error {
 		buck_name := mux.Vars(r)["bucket"]
 
-		err := bs.db.Update(func(tx *bolt.Tx) (err error) {
+		return bs.db.Update(func(tx *bolt.Tx) (err error) {
 			_, err = tx.CreateBucket([]byte(buck_name))
 			return
 		})
-
-		if err != nil {
-			encoder.Encode(Error{err.Error()})
-			return
-		}
-		encoder.Encode(Error{})
 	}
 }
 
@@ -56,7 +69,7 @@ func (self *BoltServer) Start() error {
 	self.db = db
 
 	r := mux.NewRouter()
-	r.HandleFunc("/CreateBucket/{bucket}", CreateBucketHandler(self)).Methods("GET")
+	r.HandleFunc("/CreateBucket/{bucket}", jsonHandler(CreateBucketHandler(self))).Methods("GET")
 	http.Handle("/", r)
 
 	return http.ListenAndServe(":"+self.port, nil)
