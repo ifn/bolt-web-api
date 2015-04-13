@@ -11,19 +11,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type BoltServer struct {
-	port string
-	db   *bolt.DB
-}
-
-func NewBoltSrv(port string) *BoltServer {
-	bs := new(BoltServer)
-	bs.port = port
-	return bs
-}
-
-//
-
 type Response struct {
 	Code  int    `json:"code"`
 	Error string `json:"error"`
@@ -31,7 +18,7 @@ type Response struct {
 
 type HandlerFunc func(w http.ResponseWriter, r *http.Request) error
 
-func jsonHandler(hf HandlerFunc) http.HandlerFunc {
+func jsonResp(hf HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		encoder := json.NewEncoder(w)
@@ -59,6 +46,19 @@ func CreateBucketHandler(bs *BoltServer) HandlerFunc {
 	}
 }
 
+//
+
+type BoltServer struct {
+	port string
+	db   *bolt.DB
+}
+
+func NewBoltSrv(port string) *BoltServer {
+	bs := new(BoltServer)
+	bs.port = port
+	return bs
+}
+
 func (self *BoltServer) Start() error {
 	db, err := bolt.Open("my.db", 0600, nil)
 	if err != nil {
@@ -69,7 +69,7 @@ func (self *BoltServer) Start() error {
 	self.db = db
 
 	r := mux.NewRouter()
-	r.HandleFunc("/CreateBucket/{bucket}", jsonHandler(CreateBucketHandler(self))).Methods("GET")
+	r.HandleFunc("/CreateBucket/{bucket}", jsonResp(CreateBucketHandler(self))).Methods("GET")
 	http.Handle("/", r)
 
 	return http.ListenAndServe(":"+self.port, nil)
