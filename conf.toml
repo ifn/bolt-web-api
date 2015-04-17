@@ -1,0 +1,4 @@
+port = 3344
+
+filePath = 'my.db'
+fileMode = '0666'
