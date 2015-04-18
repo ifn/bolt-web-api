@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
 	"os"
@@ -12,43 +11,6 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/gorilla/mux"
 )
-
-type Response struct {
-	Code  int    `json:"code"`
-	Error string `json:"error"`
-}
-
-type HandlerFunc func(w http.ResponseWriter, r *http.Request) error
-
-func jsonResp(hf HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		encoder := json.NewEncoder(w)
-
-		err := hf(w, r)
-
-		if err != nil {
-			encoder.Encode(Response{1, err.Error()})
-			return
-		}
-		encoder.Encode(Response{})
-	}
-}
-
-//
-
-func CreateBucketHandler(bs *BoltServer) HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) error {
-		buck_name := mux.Vars(r)["bucket"]
-
-		return bs.db.Update(func(tx *bolt.Tx) (err error) {
-			_, err = tx.CreateBucket([]byte(buck_name))
-			return
-		})
-	}
-}
-
-//
 
 type Conf struct {
 	Port int
@@ -90,6 +52,8 @@ func (self *BoltServer) Start() error {
 
 	r := mux.NewRouter()
 	r.HandleFunc("/CreateBucket/{bucket}", jsonResp(CreateBucketHandler(self))).Methods("GET")
+	r.HandleFunc("/CreateBucketIfNotExists/{bucket}", jsonResp(CreateBucketIfNotExistsHandler(self))).Methods("GET")
+	r.HandleFunc("/DeleteBucket/{bucket}", jsonResp(DeleteBucketHandler(self))).Methods("GET")
 	http.Handle("/", r)
 
 	return http.ListenAndServe(":"+self.port, nil)
