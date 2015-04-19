@@ -13,9 +13,9 @@ type Response struct {
 	Error string `json:"error"`
 }
 
-type HandlerFunc func(w http.ResponseWriter, r *http.Request) error
+type ErrHandlerFunc func(w http.ResponseWriter, r *http.Request) error
 
-func jsonResp(hf HandlerFunc) http.HandlerFunc {
+func jsonResp(hf ErrHandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		encoder := json.NewEncoder(w)
@@ -32,7 +32,7 @@ func jsonResp(hf HandlerFunc) http.HandlerFunc {
 
 //
 
-func CreateBucketHandler(bs *BoltServer) HandlerFunc {
+func CreateBucketHandler(bs *BoltServer) ErrHandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		buck_name := mux.Vars(r)["bucket"]
 
@@ -43,7 +43,7 @@ func CreateBucketHandler(bs *BoltServer) HandlerFunc {
 	}
 }
 
-func CreateBucketIfNotExistsHandler(bs *BoltServer) HandlerFunc {
+func CreateBucketIfNotExistsHandler(bs *BoltServer) ErrHandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		buck_name := mux.Vars(r)["bucket"]
 
@@ -54,7 +54,7 @@ func CreateBucketIfNotExistsHandler(bs *BoltServer) HandlerFunc {
 	}
 }
 
-func DeleteBucketHandler(bs *BoltServer) HandlerFunc {
+func DeleteBucketHandler(bs *BoltServer) ErrHandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		buck_name := mux.Vars(r)["bucket"]
 
