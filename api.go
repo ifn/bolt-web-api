@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/boltdb/bolt"
@@ -67,24 +68,19 @@ func DeleteBucketHandler(bs *BoltServer) ErrHandlerFunc {
 
 //
 
-type Message struct {
-	Key   string `json:key`
-	Value string `json:value`
-}
-
 func PutHandler(bs *BoltServer) ErrHandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		buck_name := mux.Vars(r)["bucket"]
+		key := mux.Vars(r)["key"]
 
-		var m Message
-		err := json.NewDecoder(r.Body).Decode(&m)
+		val, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			return err
 		}
 
 		return bs.db.Update(func(tx *bolt.Tx) error {
 			if buck := tx.Bucket([]byte(buck_name)); buck != nil {
-				return buck.Put([]byte(m.Key), []byte(m.Value))
+				return buck.Put([]byte(key), val)
 			}
 			return errors.New("bucket doesn't exist")
 		})

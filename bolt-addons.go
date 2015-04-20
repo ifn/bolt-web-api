@@ -55,7 +55,7 @@ func (self *BoltServer) Start() error {
 	r.HandleFunc("/CreateBucketIfNotExists/{bucket}", jsonResp(CreateBucketIfNotExistsHandler(self))).Methods("GET")
 	r.HandleFunc("/DeleteBucket/{bucket}", jsonResp(DeleteBucketHandler(self))).Methods("GET")
 
-	r.HandleFunc("/Put/{bucket}", jsonResp(PutHandler(self))).Methods("POST")
+	r.HandleFunc("/Put/{bucket}/{key}", jsonResp(PutHandler(self))).Methods("POST")
 
 	http.Handle("/", r)
 
