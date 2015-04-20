@@ -54,6 +54,9 @@ func (self *BoltServer) Start() error {
 	r.HandleFunc("/CreateBucket/{bucket}", jsonResp(CreateBucketHandler(self))).Methods("GET")
 	r.HandleFunc("/CreateBucketIfNotExists/{bucket}", jsonResp(CreateBucketIfNotExistsHandler(self))).Methods("GET")
 	r.HandleFunc("/DeleteBucket/{bucket}", jsonResp(DeleteBucketHandler(self))).Methods("GET")
+
+	r.HandleFunc("/Put/{bucket}", jsonResp(PutHandler(self))).Methods("POST")
+
 	http.Handle("/", r)
 
 	return http.ListenAndServe(":"+self.port, nil)
