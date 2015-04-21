@@ -34,6 +34,10 @@ func jsonResp(hf ErrHandlerFunc) http.HandlerFunc {
 
 //
 
+var (
+	ErrNoBucket = errors.New("bucket doesn't exist")
+)
+
 func CreateBucketHandler(bs *BoltServer) ErrHandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		buck_name := mux.Vars(r)["bucket"]
@@ -82,7 +86,22 @@ func PutHandler(bs *BoltServer) ErrHandlerFunc {
 			if buck := tx.Bucket([]byte(buck_name)); buck != nil {
 				return buck.Put([]byte(key), val)
 			}
-			return errors.New("bucket doesn't exist")
+			return ErrNoBucket
+		})
+	}
+}
+
+func GetHandler(bs *BoltServer) ErrHandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		buck_name := mux.Vars(r)["bucket"]
+		key := mux.Vars(r)["key"]
+
+		return bs.db.View(func(tx *bolt.Tx) (err error) {
+			if buck := tx.Bucket([]byte(buck_name)); buck != nil {
+				_, err = w.Write(buck.Get([]byte(key)))
+				return
+			}
+			return ErrNoBucket
 		})
 	}
 }
