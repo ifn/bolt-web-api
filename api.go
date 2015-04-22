@@ -11,7 +11,6 @@ import (
 )
 
 type Response struct {
-	Code  int    `json:"code"`
 	Error string `json:"error"`
 }
 
@@ -33,7 +32,7 @@ func jsonResp(hf interface{}) http.HandlerFunc {
 			err := hf(w, r)
 
 			if err != nil {
-				encoder.Encode(Response{1, err.Error()})
+				encoder.Encode(Response{err.Error()})
 				return
 			}
 			encoder.Encode(Response{})
@@ -46,7 +45,7 @@ func jsonResp(hf interface{}) http.HandlerFunc {
 			data, err := hf(w, r)
 
 			if err != nil {
-				encoder.Encode(DataResponse{Response{1, err.Error()}, ""})
+				encoder.Encode(DataResponse{Response{err.Error()}, ""})
 				return
 			}
 			encoder.Encode(DataResponse{Data: data})
