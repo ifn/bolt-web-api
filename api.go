@@ -15,21 +15,44 @@ type Response struct {
 	Error string `json:"error"`
 }
 
+type DataResponse struct {
+	Response
+	Data string `json:"data"`
+}
+
 type ErrHandlerFunc func(w http.ResponseWriter, r *http.Request) error
+type DataErrHandlerFunc func(w http.ResponseWriter, r *http.Request) (string, error)
 
-func jsonResp(hf ErrHandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		encoder := json.NewEncoder(w)
+func jsonResp(hf interface{}) http.HandlerFunc {
+	switch hf := hf.(type) {
+	case ErrHandlerFunc:
+		return func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			encoder := json.NewEncoder(w)
 
-		err := hf(w, r)
+			err := hf(w, r)
 
-		if err != nil {
-			encoder.Encode(Response{1, err.Error()})
-			return
+			if err != nil {
+				encoder.Encode(Response{1, err.Error()})
+				return
+			}
+			encoder.Encode(Response{})
 		}
-		encoder.Encode(Response{})
+	case DataErrHandlerFunc:
+		return func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			encoder := json.NewEncoder(w)
+
+			data, err := hf(w, r)
+
+			if err != nil {
+				encoder.Encode(DataResponse{Response{1, err.Error()}, ""})
+				return
+			}
+			encoder.Encode(DataResponse{Data: data})
+		}
 	}
+	panic("Illegal type for handler function")
 }
 
 //
@@ -91,17 +114,19 @@ func PutHandler(bs *BoltServer) ErrHandlerFunc {
 	}
 }
 
-func GetHandler(bs *BoltServer) ErrHandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) error {
+func GetHandler(bs *BoltServer) DataErrHandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) (val string, err error) {
 		buck_name := mux.Vars(r)["bucket"]
 		key := mux.Vars(r)["key"]
 
-		return bs.db.View(func(tx *bolt.Tx) (err error) {
+		err = bs.db.View(func(tx *bolt.Tx) (err error) {
 			if buck := tx.Bucket([]byte(buck_name)); buck != nil {
-				_, err = w.Write(buck.Get([]byte(key)))
+				val = string(buck.Get([]byte(key)))
 				return
 			}
 			return ErrNoBucket
 		})
+
+		return
 	}
 }
