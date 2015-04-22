@@ -19,8 +19,8 @@ type DataResponse struct {
 	Data string `json:"data"`
 }
 
-type ErrHandlerFunc func(w http.ResponseWriter, r *http.Request) error
-type DataErrHandlerFunc func(w http.ResponseWriter, r *http.Request) (string, error)
+type ErrHandlerFunc func(r *http.Request) error
+type DataErrHandlerFunc func(r *http.Request) (string, error)
 
 func jsonResp(hf interface{}) http.HandlerFunc {
 	switch hf := hf.(type) {
@@ -29,7 +29,7 @@ func jsonResp(hf interface{}) http.HandlerFunc {
 			w.Header().Set("Content-Type", "application/json")
 			encoder := json.NewEncoder(w)
 
-			err := hf(w, r)
+			err := hf(r)
 
 			if err != nil {
 				encoder.Encode(Response{err.Error()})
@@ -42,7 +42,7 @@ func jsonResp(hf interface{}) http.HandlerFunc {
 			w.Header().Set("Content-Type", "application/json")
 			encoder := json.NewEncoder(w)
 
-			data, err := hf(w, r)
+			data, err := hf(r)
 
 			if err != nil {
 				encoder.Encode(DataResponse{Response{err.Error()}, ""})
@@ -61,7 +61,7 @@ var (
 )
 
 func CreateBucketHandler(bs *BoltServer) ErrHandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) error {
+	return func(r *http.Request) error {
 		buck_name := mux.Vars(r)["bucket"]
 
 		return bs.db.Update(func(tx *bolt.Tx) (err error) {
@@ -72,7 +72,7 @@ func CreateBucketHandler(bs *BoltServer) ErrHandlerFunc {
 }
 
 func CreateBucketIfNotExistsHandler(bs *BoltServer) ErrHandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) error {
+	return func(r *http.Request) error {
 		buck_name := mux.Vars(r)["bucket"]
 
 		return bs.db.Update(func(tx *bolt.Tx) (err error) {
@@ -83,7 +83,7 @@ func CreateBucketIfNotExistsHandler(bs *BoltServer) ErrHandlerFunc {
 }
 
 func DeleteBucketHandler(bs *BoltServer) ErrHandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) error {
+	return func(r *http.Request) error {
 		buck_name := mux.Vars(r)["bucket"]
 
 		return bs.db.Update(func(tx *bolt.Tx) error {
@@ -95,7 +95,7 @@ func DeleteBucketHandler(bs *BoltServer) ErrHandlerFunc {
 //
 
 func PutHandler(bs *BoltServer) ErrHandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) error {
+	return func(r *http.Request) error {
 		buck_name := mux.Vars(r)["bucket"]
 		key := mux.Vars(r)["key"]
 
@@ -114,7 +114,7 @@ func PutHandler(bs *BoltServer) ErrHandlerFunc {
 }
 
 func GetHandler(bs *BoltServer) DataErrHandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) (val string, err error) {
+	return func(r *http.Request) (val string, err error) {
 		buck_name := mux.Vars(r)["bucket"]
 		key := mux.Vars(r)["key"]
 
