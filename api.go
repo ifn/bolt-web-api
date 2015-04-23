@@ -129,3 +129,17 @@ func GetHandler(bs *BoltServer) DataErrHandlerFunc {
 		return
 	}
 }
+
+func DeleteHandler(bs *BoltServer) ErrHandlerFunc {
+	return func(r *http.Request) error {
+		buck_name := mux.Vars(r)["bucket"]
+		key := mux.Vars(r)["key"]
+
+		return bs.db.Update(func(tx *bolt.Tx) error {
+			if buck := tx.Bucket([]byte(buck_name)); buck != nil {
+				return buck.Delete([]byte(key))
+			}
+			return ErrNoBucket
+		})
+	}
+}

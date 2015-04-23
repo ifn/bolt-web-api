@@ -51,12 +51,14 @@ func (self *BoltServer) Start() error {
 	self.db = db
 
 	r := mux.NewRouter()
+
 	r.HandleFunc("/CreateBucket/{bucket}", jsonResp(CreateBucketHandler(self))).Methods("GET")
 	r.HandleFunc("/CreateBucketIfNotExists/{bucket}", jsonResp(CreateBucketIfNotExistsHandler(self))).Methods("GET")
 	r.HandleFunc("/DeleteBucket/{bucket}", jsonResp(DeleteBucketHandler(self))).Methods("GET")
 
 	r.HandleFunc("/Get/{bucket}/{key}", jsonResp(GetHandler(self))).Methods("GET")
 	r.HandleFunc("/Put/{bucket}/{key}", jsonResp(PutHandler(self))).Methods("POST")
+	r.HandleFunc("/Delete/{bucket}/{key}", jsonResp(DeleteHandler(self))).Methods("GET")
 
 	http.Handle("/", r)
 
