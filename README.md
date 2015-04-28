@@ -1,1 +1,1 @@
-# bolt-addons
+# bolt-web-api
